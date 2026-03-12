@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bot Control Panel</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- 引入图标库 -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+<body>
+    <div class="background">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+    
+    <div class="app-container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>Bot Dashboard</h1>
+            <div id="connectionStatus" class="status-indicator online"></div>
+        </div>
+        
+        <!-- 状态卡片 -->
+        <div class="glass-card">
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-label">CPU Usage</span>
+                    <span class="status-value" id="cpuValue">--%</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Memory</span>
+                    <span class="status-value" id="memValue">--%</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Uptime</span>
+                    <span class="status-value" id="uptimeValue">--</span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" id="refreshBtn">
+                    <span class="material-icons-round">refresh</span>
+                    Refresh
+                </button>
+                <button class="btn btn-danger" id="clearBtn">
+                    <span class="material-icons-round">delete_outline</span>
+                    Clear Logs
+                </button>
+            </div>
+        </div>
+        
+        <!-- 日志区域 -->
+        <div class="glass-card logs-wrapper">
+            <div class="logs-header">
+                <span class="logs-title">SYSTEM LOGS</span>
+                <span class="logs-title" id="logCount">0 entries</span>
+            </div>
+            <div class="logs-container" id="logsContainer">
+                <div class="loading">Initializing connection...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Message</div>
+
+    <script src="./main.js"></script>
+</body>
+</html>
