@@ -61,10 +61,8 @@ class MemoryManager:
         memory = self.get_user_memory(user_id)
         history = memory.load_memory_variables({}).get('history', '')
         
-        # 如果历史记录太长，进行总结
         if len(history) > 2000:
             summary = self.summarize_history(history)
-            # 重置内存并只保留总结
             memory.clear()
             memory.chat_memory.add_ai_message(f"这是我们之前的对话总结：{summary}")
             return f"对话总结：{summary}"
@@ -72,32 +70,20 @@ class MemoryManager:
         return history
 
     def extract_and_store_memories(self, user_id: str, db_session: Session, recent_conversations: List[Conversation]):
-        """
-        从对话中提取重要记忆并存储到数据库
-
-        Args:
-            user_id: 用户ID
-            db_session: 数据库会话
-            recent_conversations: 最近的对话列表
-        """
-        # 构建对话文本
         conversation_text = "\n".join([
             f"{c.role}: {c.content}"
             for c in recent_conversations
         ])
 
-        # 使用LLM提取记忆
         prompt = self.memory_extraction_prompt.format(conversation=conversation_text)
         response = self.model_manager.generate([{"role": "user", "content": prompt}])
 
-        # 解析并存储记忆
         try:
             import json
             import re
 
             print(f"LLM response for memory extraction: {response}")
 
-            # 尝试从响应中提取 JSON 数组
             json_match = re.search(r'\[.*\]', response, re.DOTALL)
             if json_match:
                 response = json_match.group(0)
@@ -126,23 +112,10 @@ class MemoryManager:
             db_session.rollback()
 
     def get_relevant_memories(self, user_id: str, db_session: Session, query: str, limit: int = 5) -> List[Memory]:
-        """
-        获取与查询相关的记忆
-
-        Args:
-            user_id: 用户ID
-            db_session: 数据库会话
-            query: 查询文本
-            limit: 返回记忆数量限制
-
-        Returns:
-            相关记忆列表
-        """
         user = db_session.query(User).filter_by(telegram_id=user_id).first()
         if not user:
             return []
 
-        # 简单实现：按重要性和最近访问时间排序
         memories = db_session.query(Memory).filter_by(
             user_id=user.id
         ).order_by(
@@ -150,7 +123,6 @@ class MemoryManager:
             Memory.last_accessed.desc()
         ).limit(limit).all()
 
-        # 更新访问时间
         for memory in memories:
             memory.last_accessed = datetime.utcnow()
             memory.access_count += 1
@@ -159,15 +131,6 @@ class MemoryManager:
         return memories
 
     def format_memories_for_context(self, memories: List[Memory]) -> str:
-        """
-        将记忆格式化为上下文字符串
-
-        Args:
-            memories: 记忆列表
-
-        Returns:
-            格式化的记忆文本
-        """
         if not memories:
             return "暂无相关记忆"
 
@@ -178,19 +141,10 @@ class MemoryManager:
         return formatted
 
     def clear_user_memory(self, user_id: str):
-        """
-        清除用户的短期记忆
-
-        Args:
-            user_id: 用户ID
-        """
         if user_id in self.user_memories:
             del self.user_memories[user_id]
 
     def summarize_history(self, history: str) -> str:
-        """
-        使用LLM总结对话历史
-        """
         if not history or len(history) < 200:
             return history
             

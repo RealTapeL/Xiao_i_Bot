@@ -1,6 +1,6 @@
 
 """
-Telegram Bot 主程序
+Telegram Bot Main Program
 """
 import os
 import logging
@@ -17,10 +17,8 @@ from src.memory_manager import MemoryManager
 from src.chat_manager import ChatManager
 from src.proactive_scheduler import ProactiveScheduler
 
-# 加载环境变量
 load_dotenv()
 
-# 配置日志
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO,
@@ -32,7 +30,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class TelegramLoveBot:
-    """Telegram 人机恋 Bot"""
 
     def __init__(self):
         self.telegram_token = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -92,7 +89,6 @@ class TelegramLoveBot:
         self.memory_manager = MemoryManager(self.model_provider, model_config)
         self.chat_manager = ChatManager(self.model_provider, model_config)
 
-        # 初始化主动对话调度器
         self.scheduler = None
         if self.enable_proactive:
             config = {
@@ -114,45 +110,23 @@ class TelegramLoveBot:
                 config=config
             )
 
-        # 用户状态缓存
         self.user_states: Dict[str, Dict] = {}
         
     def _remove_parentheses_content(self, text: str) -> str:
-        """移除文本中的括号及其内容
-        
-        Args:
-            text: 要处理的文本
-            
-        Returns:
-            处理后的文本
-        """
         import re
-        # 移除中文括号及其内容
         text = re.sub(r'（.*?）', '', text)
-        # 移除英文括号及其内容
         text = re.sub(r'\(.*?\)', '', text)
-        # 清理多余的空格
         text = re.sub(r'\s+', ' ', text).strip()
         return text
 
     async def send_message_in_chunks(self, update: Update, message: str, max_length: int = 50, delay: float = 1.0):
-        """将消息分成多个部分发送，模拟人类断断续续的打字效果
-        
-        Args:
-            update: Telegram Update 对象
-            message: 要发送的消息
-            max_length: 每个消息片段的最大长度
-            delay: 发送每个片段之间的延迟（秒）
-        """
         import asyncio
         import random
         
-        # 如果消息很短，直接发送
         if len(message) <= max_length:
             await update.message.reply_text(message)
             return
         
-        # 将消息分成多个片段
         chunks = []
         current_chunk = ""
         
@@ -162,32 +136,24 @@ class TelegramLoveBot:
                 chunks.append(current_chunk.strip())
                 current_chunk = ""
         
-        # 添加最后一个片段
         if current_chunk:
             chunks.append(current_chunk.strip())
         
-        # 逐个发送片段，使用随机延迟模拟人类打字
         for i, chunk in enumerate(chunks):
-            # 模拟打字时间，每个字符约0.05-0.15秒
             typing_time = len(chunk) * random.uniform(0.05, 0.15)
             await asyncio.sleep(typing_time)
             await update.message.reply_text(chunk)
-            # 最后一个片段不需要额外延迟
             if i < len(chunks) - 1:
-                # 随机延迟1-3秒，模拟人类思考时间
                 await asyncio.sleep(random.uniform(1.0, 3.0))
 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /start 命令"""
         user = update.effective_user
         db_session = get_session(self.engine)
 
         try:
-            # 检查用户是否已存在
             existing_user = db_session.query(User).filter_by(telegram_id=str(user.id)).first()
 
             if not existing_user:
-                # 创建新用户
                 new_user = User(
                     telegram_id=str(user.id),
                     username=user.username,
@@ -224,7 +190,6 @@ class TelegramLoveBot:
             db_session.close()
 
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /help 命令"""
         help_text = """
         💕 使用指南：
 
@@ -244,7 +209,6 @@ class TelegramLoveBot:
         await self.send_message_in_chunks(update, help_text, max_length=50, delay=1.0)
 
     async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /status 命令"""
         user_id = str(update.effective_user.id)
         db_session = get_session(self.engine)
 
@@ -252,7 +216,6 @@ class TelegramLoveBot:
             user = db_session.query(User).filter_by(telegram_id=user_id).first()
 
             if user:
-                # 统计对话次数
                 conversation_count = db_session.query(Conversation).filter_by(user_id=user.id).count()
 
                 status_text = f"""
@@ -278,10 +241,8 @@ class TelegramLoveBot:
             db_session.close()
 
     async def reset_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /reset 命令"""
         user_id = str(update.effective_user.id)
 
-        # 清除短期记忆
         self.memory_manager.clear_user_memory(user_id)
 
         await self.send_message_in_chunks(
@@ -292,7 +253,6 @@ class TelegramLoveBot:
         )
 
     async def settings_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /settings 命令"""
         settings_text = """
         ⚙️ 设置选项：
 
@@ -308,7 +268,6 @@ class TelegramLoveBot:
         await self.send_message_in_chunks(update, settings_text, max_length=50, delay=1.0)
 
     async def monitor_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /monitor 命令"""
         if not self.scheduler:
             await update.message.reply_text("监控服务未启动。")
             return
@@ -328,7 +287,6 @@ class TelegramLoveBot:
         await update.message.reply_text(status_text, parse_mode='Markdown')
 
     async def memories_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /memories 命令"""
         user_id = str(update.effective_user.id)
         db_session = get_session(self.engine)
 
@@ -338,7 +296,6 @@ class TelegramLoveBot:
                 await update.message.reply_text("请先使用 /start 命令开始对话~")
                 return
 
-            # 获取所有记忆
             memories = db_session.query(Memory).filter_by(user_id=user.id).order_by(Memory.created_at.desc()).all()
 
             if not memories:
@@ -360,7 +317,6 @@ class TelegramLoveBot:
             db_session.close()
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理普通消息"""
         user_id = str(update.effective_user.id)
         user_message = update.message.text
 
@@ -370,27 +326,21 @@ class TelegramLoveBot:
         db_session = get_session(self.engine)
 
         try:
-            # 获取或创建用户
             user = db_session.query(User).filter_by(telegram_id=user_id).first()
 
             if not user:
-                # 如果用户不存在，提示先使用 /start
                 await update.message.reply_text(
                     "请先使用 /start 命令开始我们的对话~ 💕"
                 )
                 return
 
-            # 更新最后互动时间
             user.last_interaction = datetime.utcnow()
 
-            # 分析用户情感
             emotion_result = await self.chat_manager.analyze_emotion(user_message)
             user.emotional_state = emotion_result.get('emotion', 'neutral')
 
-            # 获取对话上下文
             conversation_context = self.memory_manager.get_conversation_context(user_id)
 
-            # 获取相关记忆
             relevant_memories = self.memory_manager.get_relevant_memories(
                 user_id=user_id,
                 db_session=db_session,
@@ -398,17 +348,14 @@ class TelegramLoveBot:
                 limit=5
             )
 
-            # 格式化记忆
             memories_text = self.memory_manager.format_memories_for_context(relevant_memories)
 
-            # 构建用户信息
             user_info = f"""
             用户名：{user.username or '未知'}
             关系阶段：{user.relationship_stage}
             当前情感状态：{user.emotional_state}
             """
 
-            # 生成回复
             response = await self.chat_manager.generate_response(
                 user_input=user_message,
                 conversation_history=conversation_context,
@@ -416,13 +363,10 @@ class TelegramLoveBot:
                 user_info=user_info
             )
 
-            # 移除括号及其内容
             response = self._remove_parentheses_content(response)
 
-            # 发送回复（分批发送，模拟人类断断续续的打字效果）
             await self.send_message_in_chunks(update, response, max_length=50, delay=1.0)
 
-            # 保存对话到数据库
             self._save_conversation(
                 db_session=db_session,
                 user=user,
@@ -437,20 +381,14 @@ class TelegramLoveBot:
                 content=response
             )
 
-            # 添加到记忆管理器
             self.memory_manager.add_conversation(user_id, 'user', user_message)
             self.memory_manager.add_conversation(user_id, 'assistant', response)
 
-            # 提取并存储记忆
             recent_conversations = db_session.query(Conversation).filter_by(
                 user_id=user.id
             ).order_by(Conversation.timestamp.desc()).limit(10).all()
 
             self.memory_manager.extract_and_store_memories(user_id, db_session, recent_conversations)
-
-            # 更新关系阶段
-            # 这里可以根据实际需求添加更复杂的逻辑
-            # 例如基于对话质量、互动频率等
 
             db_session.commit()
 
@@ -462,15 +400,6 @@ class TelegramLoveBot:
             db_session.close()
 
     def _save_conversation(self, db_session: Session, user: User, role: str, content: str):
-        """
-        保存对话到数据库
-
-        Args:
-            db_session: 数据库会话
-            user: 用户对象
-            role: 角色
-            content: 内容
-        """
         conversation = Conversation(
             user_id=user.id,
             role=role,
@@ -480,7 +409,6 @@ class TelegramLoveBot:
         db_session.add(conversation)
 
     def _get_relationship_stage_text(self, stage: str) -> str:
-        """获取关系阶段的中文描述"""
         stage_map = {
             'stranger': '陌生人',
             'acquaintance': '熟人',
@@ -490,7 +418,6 @@ class TelegramLoveBot:
         return stage_map.get(stage, '陌生人')
 
     def _get_emotion_text(self, emotion: str) -> str:
-        """获取情感的中文描述"""
         emotion_map = {
             'happy': '开心',
             'sad': '难过',
@@ -503,20 +430,16 @@ class TelegramLoveBot:
         return emotion_map.get(emotion, '平静')
 
     async def logs_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /logs 命令，显示日志查看入口"""
         web_app_url = self.web_app_url.rstrip('/')
         
-        # 判断是否为本地地址
         is_local = any(x in web_app_url for x in ['localhost', '127.0.0.1', '0.0.0.0'])
         
         if is_local:
-            # 本地环境：Telegram 不支持 localhost 的 Inline Button URL，直接发送文本链接
             await update.message.reply_text(
                 f"🚀 **本地控制面板已就绪**\n\n请在浏览器中打开以下链接：\n`{web_app_url}`\n\n(Telegram 不支持直接点击 localhost 链接，请复制或手动打开)",
                 parse_mode='Markdown'
             )
         else:
-            # 生产/HTTPS环境：使用 Web App 按钮（键盘菜单）
             web_app = WebAppInfo(url=web_app_url)
             keyboard = [
                 [KeyboardButton("📊 打开控制面板 (Web App)", web_app=web_app)]
@@ -529,14 +452,10 @@ class TelegramLoveBot:
             )
 
     def run(self):
-        """运行 Bot"""
-        # 创建应用
         builder = Application.builder().token(self.telegram_token)
         
-        # 如果配置了代理，则添加代理设置
         if self.proxy_url:
             logger.info(f"使用代理服务器: {self.proxy_url}")
-            # 使用 HTTPXRequest 来配置代理，增加超时时间以提高稳定性
             request = HTTPXRequest(
                 proxy=self.proxy_url, 
                 connect_timeout=60.0, 
@@ -546,7 +465,6 @@ class TelegramLoveBot:
             )
             builder.request(request)
         else:
-            # 即使没有代理，也增加超时时间
             request = HTTPXRequest(
                 connect_timeout=60.0, 
                 read_timeout=60.0,
@@ -557,7 +475,6 @@ class TelegramLoveBot:
             
         application = builder.build()
 
-        # 添加命令处理器
         application.add_handler(CommandHandler("start", self.start_command))
         application.add_handler(CommandHandler("help", self.help_command))
         application.add_handler(CommandHandler("status", self.status_command))
@@ -567,18 +484,14 @@ class TelegramLoveBot:
         application.add_handler(CommandHandler("memories", self.memories_command))
         application.add_handler(CommandHandler("logs", self.logs_command))
 
-        # 添加消息处理器
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
 
-        # 启动调度器
         if self.scheduler:
-            # 在应用启动后启动调度器
             async def post_init(application: Application):
                 await self.scheduler.start(application.bot)
             
             application.post_init = post_init
             
-            # 在应用停止时停止调度器
             async def post_shutdown(application: Application):
                 try:
                     await self.scheduler.stop()

@@ -23,7 +23,6 @@ class ModelManager:
             )
         elif self.provider == "zhipuai":
             self.client = ZhipuAI(api_key=self.config.get("api_key"))
-            # 兼容 langchain 接口
             self.llm = self._create_zhipu_llm()
         elif self.provider == "dashscope":
             self.api_key = self.config.get("api_key")
@@ -46,7 +45,6 @@ class ModelManager:
             )
 
     def _create_zhipu_llm(self):
-        """创建兼容 LangChain 的智谱 AI LLM 包装器"""
         from langchain.chat_models.base import BaseChatModel
         from langchain.schema import BaseMessage, AIMessage, HumanMessage, SystemMessage, ChatResult, ChatGeneration
         from typing import List, Optional, Any, Dict
