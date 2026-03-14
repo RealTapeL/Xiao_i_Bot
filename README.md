@@ -17,6 +17,8 @@ A Telegram bot powered by large language models that provides intelligent conver
 - **Smart Triggers** - Initiates conversations based on user activity
 - **Daily Greetings** - Morning and night automated messages
 - **Web Dashboard** - Real-time logs and monitoring interface
+- **Skills System** - Extensible plugin system for external integrations
+- **Xiaohongshu (Little Red Book) Integration** - Search, post, and manage Xiaohongshu content
 
 ## System Architecture
 
@@ -104,6 +106,8 @@ The bot will start polling for messages. Open Telegram and send `/start` to begi
 | `/monitor` | View system monitoring stats |
 | `/memories` | View stored long-term memories |
 | `/logs` | Open web dashboard |
+| `/xhs` | Xiaohongshu skill operations |
+| `/skills` | List all available skills |
 
 ## Configuration Guide
 
@@ -246,6 +250,31 @@ src/
 2. Add new triggers in `TriggerEngine`
 3. Create new scheduler jobs in `ProactiveScheduler`
 4. Add database models in `database.py`
+5. Add new skills by extending `BaseSkill` in `skill_manager.py`
+
+## Skills System
+
+The bot includes a extensible skills system that allows integration with external services. See [Skills Guide](skills.md) for detailed information.
+
+### Available Skills
+
+- **xiaohongshu** - Xiaohongshu (Little Red Book) integration
+
+### Adding New Skills
+
+```python
+from src.skill_manager import BaseSkill, SkillResult
+
+class MyCustomSkill(BaseSkill):
+    name = "my_skill"
+    description = "My custom skill"
+    
+    async def execute(self, params: dict) -> SkillResult:
+        # Your implementation
+        return SkillResult(success=True, result="Done")
+```
+
+Then register it in `SkillManager`.
 
 ## License
 
@@ -254,4 +283,3 @@ MIT License
 ---
 
 **Made with 💕 for AI companionship**
-# Xiao_i_Bot

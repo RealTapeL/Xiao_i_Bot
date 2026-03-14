@@ -1,10 +1,32 @@
 from typing import List, Dict, Optional
 from datetime import datetime
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from sqlalchemy.orm import Session
 from src.database import User, Memory, Conversation
 from src.model_manager import ModelManager
+
+
+class SimpleMemory:
+    """Simple in-memory conversation history"""
+    
+    def __init__(self):
+        self.messages: List[Dict] = []
+    
+    def add_user_message(self, content: str):
+        self.messages.append({"role": "user", "content": content})
+    
+    def add_ai_message(self, content: str):
+        self.messages.append({"role": "assistant", "content": content})
+    
+    def load_memory_variables(self) -> Dict:
+        history = "\n".join([
+            f"{msg['role']}: {msg['content']}"
+            for msg in self.messages
+        ])
+        return {"history": history}
+    
+    def clear(self):
+        self.messages = []
 
 
 class MemoryManager:
@@ -15,7 +37,7 @@ class MemoryManager:
         self.config = config or {}
         self.max_memory_tokens = config.get("max_memory_tokens", 2000) if config else 2000
         self.summary_tokens = config.get("summary_tokens", 500) if config else 500
-        self.user_memories: Dict[str, ConversationBufferMemory] = {}
+        self.user_memories: Dict[str, SimpleMemory] = {}
 
         self.summarization_prompt = PromptTemplate.from_template("""
         请将以下对话历史总结为一段简短的文字（不超过200字），保留所有关键信息（如提到的姓名、爱好、重要约定或情感转折点）。
@@ -43,28 +65,26 @@ class MemoryManager:
         如果没有提取到任何信息，返回空数组：[]
         """)
 
-    def get_user_memory(self, user_id: str) -> ConversationBufferMemory:
+    def get_user_memory(self, user_id: str) -> SimpleMemory:
         if user_id not in self.user_memories:
-            self.user_memories[user_id] = ConversationBufferMemory(
-                return_messages=False
-            )
+            self.user_memories[user_id] = SimpleMemory()
         return self.user_memories[user_id]
 
     def add_conversation(self, user_id: str, role: str, content: str):
         memory = self.get_user_memory(user_id)
         if role == 'user':
-            memory.chat_memory.add_user_message(content)
+            memory.add_user_message(content)
         else:
-            memory.chat_memory.add_ai_message(content)
+            memory.add_ai_message(content)
 
     def get_conversation_context(self, user_id: str) -> str:
         memory = self.get_user_memory(user_id)
-        history = memory.load_memory_variables({}).get('history', '')
+        history = memory.load_memory_variables().get('history', '')
         
         if len(history) > 2000:
             summary = self.summarize_history(history)
             memory.clear()
-            memory.chat_memory.add_ai_message(f"这是我们之前的对话总结：{summary}")
+            memory.add_ai_message(f"这是我们之前的对话总结：{summary}")
             return f"对话总结：{summary}"
             
         return history
@@ -90,6 +110,9 @@ class MemoryManager:
 
             memories_data = json.loads(response)
             user = db_session.query(User).filter_by(telegram_id=user_id).first()
+            
+            if not user:
+                return
 
             for mem_data in memories_data:
                 memory = Memory(

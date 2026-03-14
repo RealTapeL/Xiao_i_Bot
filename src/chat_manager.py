@@ -3,8 +3,8 @@ from typing import Dict, Optional
 from datetime import datetime
 import json
 from src.model_manager import ModelManager
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import SystemMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage
 
 class ChatManager:
 

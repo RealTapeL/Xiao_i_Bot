@@ -16,6 +16,7 @@ from src.database import init_db, get_session, User, Conversation
 from src.memory_manager import MemoryManager
 from src.chat_manager import ChatManager
 from src.proactive_scheduler import ProactiveScheduler
+from src.skill_manager import SkillManager
 
 load_dotenv()
 
@@ -88,6 +89,7 @@ class TelegramLoveBot:
 
         self.memory_manager = MemoryManager(self.model_provider, model_config)
         self.chat_manager = ChatManager(self.model_provider, model_config)
+        self.skill_manager = SkillManager()
 
         self.scheduler = None
         if self.enable_proactive:
@@ -198,6 +200,8 @@ class TelegramLoveBot:
         /status - 查看当前关系状态
         /reset - 重置对话记忆
         /settings - 设置偏好
+        /xhs - 小红书技能
+        /skills - 查看可用技能
 
         💡 小贴士：
         - 分享更多关于你的信息，我会更了解你
@@ -451,6 +455,100 @@ class TelegramLoveBot:
                 reply_markup=reply_markup
             )
 
+    async def xhs_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /xhs command for Xiaohongshu operations"""
+        if not context.args:
+            help_text = """
+🔴 小红书技能使用指南：
+
+/xhs search <关键词> - 搜索小红书帖子
+/xhs feeds - 获取推荐内容
+/xhs usernote - 查看我的笔记
+/xhs note <笔记ID> - 查看笔记详情
+
+例如：
+/xhs search Python教程
+/xhs feeds
+            """
+            await update.message.reply_text(help_text)
+            return
+        
+        action = context.args[0].lower()
+        
+        if action == "search":
+            if len(context.args) < 2:
+                await update.message.reply_text("请提供搜索关键词，例如：/xhs search Python教程")
+                return
+            keyword = " ".join(context.args[1:])
+            await update.message.reply_text(f"🔍 正在搜索：「{keyword}」...")
+            
+            result = await self.skill_manager.execute_skill("xiaohongshu", {
+                "action": "search",
+                "keyword": keyword,
+                "limit": 10
+            })
+            
+            if result.success:
+                await update.message.reply_text(f"✅ 搜索结果：\n\n{result.result}")
+            else:
+                await update.message.reply_text(f"❌ 搜索失败：{result.error}")
+        
+        elif action == "feeds":
+            await update.message.reply_text("📡 正在获取推荐内容...")
+            
+            result = await self.skill_manager.execute_skill("xiaohongshu", {
+                "action": "feeds",
+                "limit": 10
+            })
+            
+            if result.success:
+                await update.message.reply_text(f"✅ 推荐内容：\n\n{result.result}")
+            else:
+                await update.message.reply_text(f"❌ 获取失败：{result.error}")
+        
+        elif action == "usernote":
+            await update.message.reply_text("👤 正在获取你的笔记...")
+            
+            result = await self.skill_manager.execute_skill("xiaohongshu", {
+                "action": "user_notes",
+                "limit": 10
+            })
+            
+            if result.success:
+                await update.message.reply_text(f"✅ 你的笔记：\n\n{result.result}")
+            else:
+                await update.message.reply_text(f"❌ 获取失败：{result.error}")
+        
+        elif action == "note":
+            if len(context.args) < 2:
+                await update.message.reply_text("请提供笔记ID，例如：/xhs note 12345678")
+                return
+            note_id = context.args[1]
+            await update.message.reply_text(f"📝 正在获取笔记详情...")
+            
+            result = await self.skill_manager.execute_skill("xiaohongshu", {
+                "action": "note_detail",
+                "note_id": note_id
+            })
+            
+            if result.success:
+                await update.message.reply_text(f"✅ 笔记详情：\n\n{result.result}")
+            else:
+                await update.message.reply_text(f"❌ 获取失败：{result.error}")
+        
+        else:
+            await update.message.reply_text(f"未知操作：{action}\n使用 /xhs 查看帮助")
+
+    async def skills_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """List all available skills"""
+        skills = self.skill_manager.list_skills()
+        
+        text = "🎯 可用技能列表：\n\n"
+        for skill in skills:
+            text += f"• {skill['name']}: {skill['description']}\n"
+        
+        await update.message.reply_text(text)
+
     def run(self):
         builder = Application.builder().token(self.telegram_token)
         
@@ -483,6 +581,8 @@ class TelegramLoveBot:
         application.add_handler(CommandHandler("monitor", self.monitor_command))
         application.add_handler(CommandHandler("memories", self.memories_command))
         application.add_handler(CommandHandler("logs", self.logs_command))
+        application.add_handler(CommandHandler("xhs", self.xhs_command))
+        application.add_handler(CommandHandler("skills", self.skills_command))
 
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
 
