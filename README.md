@@ -45,25 +45,30 @@ bot/
 ├── requirements.txt
 ├── .env.example
 ├── main.py
+├── MAC_SETUP.md                  # Mac user startup guide (for China users)
 └── README.md
 ```
 
 ## Quick Start
 
+> **🇨🇳 中国大陆用户注意**：如果你的服务器在中国大陆，Telegram API 可能无法直接访问。请参考 [Mac 用户启动指南](MAC_SETUP.md) 使用 SSH 隧道共享 Mac 上的 Clash 代理。
+
 ### 1. Environment Setup
 
 ```bash
 # Navigate to project directory
-cd /Users/lsy/bot
+cd /root/Xiao_i_Bot
 
 # Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
 # or
-venv\Scripts\activate     # Windows
+.venv\Scripts\activate     # Windows
 
 # Install dependencies
 pip install -r requirements.txt
+# 或使用 uv (更快)
+uv pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment Variables
@@ -82,7 +87,18 @@ cp .env.example .env
 3. Follow prompts to set bot name and username
 4. Copy the Bot Token to your `.env` file
 
-### 4. Run the Bot
+### 4. Configure Proxy (if needed)
+
+If your server cannot directly access Telegram API (e.g., servers in mainland China), configure a proxy in `.env`:
+
+```env
+HTTP_PROXY=http://127.0.0.1:7890
+HTTPS_PROXY=http://127.0.0.1:7890
+```
+
+**Mac 用户**：请参考 [Mac 用户启动指南](MAC_SETUP.md) 使用 SSH 隧道自动共享 Clash 代理。
+
+### 5. Run the Bot
 
 ```bash
 # Run directly
@@ -275,6 +291,18 @@ class MyCustomSkill(BaseSkill):
 ```
 
 Then register it in `SkillManager`.
+
+## Special Guides
+
+### For Mac Users in China
+
+If you are using a Linux server in mainland China and need to access Telegram API, please refer to the **[Mac User Startup Guide](MAC_SETUP.md)**. This guide explains how to use SSH tunneling to share your Mac's Clash proxy with the remote server.
+
+Key features of this solution:
+- One-click startup script
+- Automatic SSH tunnel management
+- Proxy connectivity testing
+- Clean shutdown handling
 
 ## License
 

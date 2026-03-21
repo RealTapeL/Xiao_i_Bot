@@ -2,9 +2,17 @@ import psutil
 import time
 import threading
 import logging
+import platform
+import subprocess
 from typing import Dict, Any, Optional
-from pynput import mouse, keyboard
 from datetime import datetime
+
+# Platform-specific imports
+try:
+    from pynput import mouse, keyboard
+except ImportError:
+    mouse = None
+    keyboard = None
 
 try:
     from AppKit import NSWorkspace
@@ -52,14 +60,51 @@ class SystemMonitor:
             self.stats["last_input_time"] = time.time()
             self.stats["keyboard_count"] += 1
 
+    def _get_active_window_linux(self) -> str:
+        """Get active window on Linux using xdotool or /proc"""
+        try:
+            # Try xdotool first
+            result = subprocess.run(
+                ["xdotool", "getactivewindow", "getwindowname"],
+                capture_output=True,
+                text=True,
+                timeout=1
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()[:50]
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+        
+        # Fallback: try to get from environment
+        try:
+            result = subprocess.run(
+                ["cat", "/proc/self/cmdline"],
+                capture_output=True,
+                text=True,
+                timeout=1
+            )
+            if result.returncode == 0:
+                return "Terminal"
+        except:
+            pass
+        
+        return "Unknown"
+
     def _get_active_app(self) -> str:
-        if NSWorkspace:
+        """Get active application name (cross-platform)"""
+        system = platform.system()
+        
+        if system == "Darwin" and NSWorkspace:
             try:
                 active_app = NSWorkspace.sharedWorkspace().activeApplication()
                 return active_app.get('NSApplicationName', 'Unknown')
             except Exception as e:
-                logger.error(f"Error getting active app: {e}")
+                logger.error(f"Error getting active app on macOS: {e}")
                 return "Unknown"
+        
+        elif system == "Linux":
+            return self._get_active_window_linux()
+        
         return "Unknown"
 
     def _update_stats(self):
@@ -95,12 +140,19 @@ class SystemMonitor:
         
         self.running = True
         
-        # 启动输入监听器
-        self._mouse_listener = mouse.Listener(on_move=self._on_move, on_click=self._on_click)
-        self._keyboard_listener = keyboard.Listener(on_press=self._on_press)
-        
-        self._mouse_listener.start()
-        self._keyboard_listener.start()
+        # 启动输入监听器 (仅当 pynput 可用时)
+        if mouse and keyboard:
+            try:
+                self._mouse_listener = mouse.Listener(on_move=self._on_move, on_click=self._on_click)
+                self._keyboard_listener = keyboard.Listener(on_press=self._on_press)
+                self._mouse_listener.start()
+                self._keyboard_listener.start()
+            except Exception as e:
+                logger.warning(f"Failed to start input listeners: {e}")
+                self._mouse_listener = None
+                self._keyboard_listener = None
+        else:
+            logger.info("Input monitoring not available on this platform")
         
         # 启动状态更新线程
         self._thread = threading.Thread(target=self._update_stats, daemon=True)
@@ -111,9 +163,15 @@ class SystemMonitor:
         """停止监控"""
         self.running = False
         if self._mouse_listener:
-            self._mouse_listener.stop()
+            try:
+                self._mouse_listener.stop()
+            except Exception as e:
+                logger.debug(f"Error stopping mouse listener: {e}")
         if self._keyboard_listener:
-            self._keyboard_listener.stop()
+            try:
+                self._keyboard_listener.stop()
+            except Exception as e:
+                logger.debug(f"Error stopping keyboard listener: {e}")
         if self._thread:
             self._thread.join(timeout=1.0)
         logger.info("System monitor stopped")

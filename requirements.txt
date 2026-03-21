@@ -16,5 +16,5 @@ aiohttp>=3.9.0
 pytz>=2023.3
 tiktoken>=0.5.0
 psutil>=7.2.2
-pynput>=1.8.1
-pyobjc>=12.1
+pynput>=1.8.1; platform_system == "Darwin"
+pyobjc>=12.1; platform_system == "Darwin"
