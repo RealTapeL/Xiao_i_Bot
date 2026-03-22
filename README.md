@@ -5,12 +5,12 @@ A Telegram bot powered by large language models that provides intelligent conver
 ## Features
 
 ### Core Features
-- **Intelligent Conversation** - Natural language dialogue using LLM
-- **Memory System** - Long-term memory storage with importance scoring
-- **Proactive Care** - Scheduled check-ins and caring messages
-- **User Profiling** - Tracks relationship stage and emotional state
-- **Emotion Analysis** - Analyzes user emotions in real-time
-- **Relationship Development** - Evolves from stranger to partner over time
+- **Intelligent Conversation** - Natural language dialogue using LLM with human-like, emotionally intelligent responses
+- **Memory System** - Long-term memory storage with importance scoring and automatic extraction
+- **User Profiling** - Comprehensive user profiles (`UserProfile` class) that track preferences, habits, personality traits, and shared memories
+- **Proactive Care** - Scheduled check-ins and caring messages based on user profile
+- **Emotion Analysis** - Analyzes user emotions in real-time for empathetic responses
+- **Relationship Development** - Evolves from stranger → acquaintance → friend → partner over time with adapted conversation styles
 
 ### Advanced Features
 - **System Monitoring** - Monitors computer usage patterns (CPU, memory, idle time)
@@ -117,10 +117,11 @@ The bot will start polling for messages. Open Telegram and send `/start` to begi
 | `/start` | Start conversation with the bot |
 | `/help` | Display help information |
 | `/status` | View current relationship status |
+| `/profile` | View your user profile as seen by the bot |
+| `/memories` | View stored long-term memories |
 | `/reset` | Reset conversation memory |
 | `/settings` | View/settings preferences |
 | `/monitor` | View system monitoring stats |
-| `/memories` | View stored long-term memories |
 | `/logs` | Open web dashboard |
 | `/xhs` | Xiaohongshu skill operations |
 | `/skills` | List all available skills |
@@ -227,6 +228,36 @@ Uses SQLite by default. Database schema includes:
 - **conversations** - Message history
 - **memories** - Extracted long-term memories
 - **proactive_messages** - Scheduled message logs
+
+### UserProfile - Intelligent User Profiling
+
+The bot features an advanced **UserProfile** system that builds a comprehensive understanding of each user:
+
+```python
+UserProfile stores:
+├── name                 # Preferred nickname/calling
+├── preferences          # Likes, interests, tastes
+├── habits              # Daily routines and habits
+├── important_dates     # Birthdays, anniversaries
+├── personality_traits  # Character characteristics
+├── dislikes            # Things to avoid
+├── emotional_needs     # Emotional support preferences
+├── shared_memories     # Special moments together
+└── conversation_count  # Total interactions
+```
+
+**How it works:**
+1. **Automatic Extraction**: After each conversation, LLM analyzes dialogue to extract new information
+2. **Smart Deduplication**: Prevents storing redundant or similar memories
+3. **Importance Scoring**: Each memory is ranked 0-1 by significance
+4. **Context Awareness**: Bot uses profile data to personalize responses
+
+**Commands:**
+- `/profile` - View your complete user profile as seen by the bot
+- `/memories` - List all stored memories about you
+
+**Relationship Evolution:**
+The bot adapts its personality based on relationship stage (stranger → acquaintance → friend → partner), with conversation style becoming more intimate over time.
 
 ## Performance Optimization
 

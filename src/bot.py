@@ -193,24 +193,33 @@ class TelegramLoveBot:
 
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         help_text = """
-        💕 使用指南：
+💕 **使用指南** 💕
 
-        /start - 开始对话
-        /help - 查看帮助
-        /status - 查看当前关系状态
-        /reset - 重置对话记忆
-        /settings - 设置偏好
-        /xhs - 小红书技能
-        /skills - 查看可用技能
+**基础命令：**
+/start - 开始对话
+/help - 查看帮助
+/status - 查看当前关系状态
+/profile - 查看我眼中的你 💝
+/memories - 查看我记住的事
 
-        💡 小贴士：
-        - 分享更多关于你的信息，我会更了解你
-        - 我会主动关心你，但也可以随时找我聊天
-        - 随着时间推移，我们的关系会越来越亲密
+**系统命令：**
+/reset - 重置对话记忆
+/settings - 设置偏好
+/monitor - 查看系统监控
 
-        让我们一起创造美好的回忆吧~ 💝
+**技能命令：**
+/xhs - 小红书技能
+/skills - 查看所有可用技能
+
+**💡 小贴士：**
+• 多跟我分享你的喜好、习惯和故事
+• 我会记住你说过的每一件小事
+• 随着时间推移，我会越来越了解你
+• 我们的关系也会从陌生到亲密 💕
+
+想我了就随时找我聊天哦～
         """
-        await self.send_message_in_chunks(update, help_text, max_length=50, delay=1.0)
+        await update.message.reply_text(help_text, parse_mode='Markdown')
 
     async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = str(update.effective_user.id)
@@ -320,6 +329,77 @@ class TelegramLoveBot:
         finally:
             db_session.close()
 
+    async def profile_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """查看用户画像命令"""
+        user_id = str(update.effective_user.id)
+        db_session = get_session(self.engine)
+
+        try:
+            user = db_session.query(User).filter_by(telegram_id=user_id).first()
+            if not user:
+                await update.message.reply_text("请先使用 /start 命令开始对话~ 💕")
+                return
+
+            # 获取用户画像
+            user_profile = self.memory_manager.get_user_profile(user_id, db_session)
+            profile = user_profile.profile
+
+            # 构建画像文本
+            text = f"""💝 **我眼中的你**
+
+**称呼**：{profile.get('name') or user.first_name or '亲爱的'}
+**关系阶段**：{self._get_relationship_stage_text(user.relationship_stage)}
+**对话次数**：{profile.get('conversation_count', 0)} 次
+
+**📝 你的画像**：
+"""
+            
+            if profile.get('preferences'):
+                prefs = profile['preferences']
+                if isinstance(prefs, dict):
+                    text += "\n**喜好**：\n"
+                    for k, v in prefs.items():
+                        text += f"  • {k}: {v}\n"
+                else:
+                    text += f"\n**喜好**：{prefs}\n"
+            
+            if profile.get('habits'):
+                habits = profile['habits']
+                if isinstance(habits, dict):
+                    text += "\n**习惯**：\n"
+                    for k, v in habits.items():
+                        text += f"  • {k}: {v}\n"
+                else:
+                    text += f"\n**习惯**：{habits}\n"
+            
+            if profile.get('personality_traits'):
+                traits = ", ".join(profile['personality_traits'])
+                text += f"\n**性格**：{traits}\n"
+            
+            if profile.get('emotional_needs'):
+                needs = ", ".join(profile['emotional_needs'])
+                text += f"\n**情感需求**：{needs}\n"
+            
+            if profile.get('shared_memories'):
+                text += "\n**我们的回忆**：\n"
+                for mem in profile['shared_memories'][:3]:
+                    text += f"  • {mem}\n"
+            
+            # 如果没有太多信息
+            if not any([profile.get('preferences'), profile.get('habits'), 
+                       profile.get('personality_traits')]):
+                text += "\n_我还在努力了解你呢，多跟我聊聊天吧~_ 💕"
+            else:
+                text += "\n_我会继续记住关于你的一切_ 💕"
+
+            await update.message.reply_text(text, parse_mode='Markdown')
+
+        except Exception as e:
+            logger.error(f"Error in profile_command: {e}")
+            await update.message.reply_text("获取画像失败，请稍后再试。")
+        finally:
+            db_session.close()
+
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = str(update.effective_user.id)
         user_message = update.message.text
@@ -338,46 +418,58 @@ class TelegramLoveBot:
                 )
                 return
 
+            # 更新用户活跃时间
             user.last_interaction = datetime.utcnow()
 
+            # 分析用户情感
             emotion_result = await self.chat_manager.analyze_emotion(user_message)
             user.emotional_state = emotion_result.get('emotion', 'neutral')
 
+            # 获取对话上下文
             conversation_context = self.memory_manager.get_conversation_context(user_id)
 
+            # 获取相关记忆
             relevant_memories = self.memory_manager.get_relevant_memories(
                 user_id=user_id,
                 db_session=db_session,
                 query=user_message,
                 limit=5
             )
-
             memories_text = self.memory_manager.format_memories_for_context(relevant_memories)
 
+            # 获取用户画像
+            user_profile = self.memory_manager.get_user_profile(user_id, db_session)
+            profile_text = user_profile.to_text()
+
+            # 构建用户信息
             user_info = f"""
-            用户名：{user.username or '未知'}
-            关系阶段：{user.relationship_stage}
-            当前情感状态：{user.emotional_state}
+用户昵称：{user.first_name or user.username or '亲爱的'}
+关系阶段：{self._get_relationship_stage_text(user.relationship_stage)}
+当前情绪：{user.emotional_state}
+对话次数：{user_profile.get('conversation_count', 0)}
+用户画像：{profile_text}
             """
 
+            # 生成回复（使用新的增强版方法）
             response = await self.chat_manager.generate_response(
                 user_input=user_message,
                 conversation_history=conversation_context,
                 relevant_memories=memories_text,
-                user_info=user_info
+                user_info=user_info,
+                relationship_stage=user.relationship_stage,
+                user_profile=user_profile.profile
             )
 
-            response = self._remove_parentheses_content(response)
+            # 发送回复
+            await self.send_message_in_chunks(update, response, max_length=100, delay=0.5)
 
-            await self.send_message_in_chunks(update, response, max_length=50, delay=1.0)
-
+            # 保存对话到数据库
             self._save_conversation(
                 db_session=db_session,
                 user=user,
                 role='user',
                 content=user_message
             )
-
             self._save_conversation(
                 db_session=db_session,
                 user=user,
@@ -385,20 +477,42 @@ class TelegramLoveBot:
                 content=response
             )
 
+            # 添加到内存历史
             self.memory_manager.add_conversation(user_id, 'user', user_message)
             self.memory_manager.add_conversation(user_id, 'assistant', response)
 
+            # 异步提取记忆和更新画像
             recent_conversations = db_session.query(Conversation).filter_by(
                 user_id=user.id
-            ).order_by(Conversation.timestamp.desc()).limit(10).all()
+            ).order_by(Conversation.timestamp.desc()).limit(5).all()
 
-            self.memory_manager.extract_and_store_memories(user_id, db_session, recent_conversations)
+            # 提取并存储记忆
+            memories = await self.memory_manager.extract_memories(
+                user_id, db_session, recent_conversations
+            )
+            self.memory_manager.store_memories(user_id, db_session, memories)
+
+            # 更新用户画像
+            await self.memory_manager.update_user_profile(
+                user_id, db_session, recent_conversations
+            )
+
+            # 检查是否需要升级关系阶段
+            new_stage = self.chat_manager.update_relationship_stage(
+                user.relationship_stage,
+                user_profile.get('conversation_count', 0),
+                0.5,  # 平均情感分数，可以从历史计算
+                (datetime.utcnow() - user.created_at).days if user.created_at else 0
+            )
+            if new_stage != user.relationship_stage:
+                user.relationship_stage = new_stage
+                logger.info(f"用户 {user_id} 关系阶段升级到: {new_stage}")
 
             db_session.commit()
 
         except Exception as e:
-            logger.error(f"Error in handle_message: {e}")
-            await update.message.reply_text("抱歉，出现了一些问题，请稍后再试。")
+            logger.error(f"Error in handle_message: {e}", exc_info=True)
+            await update.message.reply_text("抱歉，我现在有点迷糊，能再说一遍吗？💕")
             db_session.rollback()
         finally:
             db_session.close()
@@ -580,6 +694,7 @@ class TelegramLoveBot:
         application.add_handler(CommandHandler("settings", self.settings_command))
         application.add_handler(CommandHandler("monitor", self.monitor_command))
         application.add_handler(CommandHandler("memories", self.memories_command))
+        application.add_handler(CommandHandler("profile", self.profile_command))
         application.add_handler(CommandHandler("logs", self.logs_command))
         application.add_handler(CommandHandler("xhs", self.xhs_command))
         application.add_handler(CommandHandler("skills", self.skills_command))
