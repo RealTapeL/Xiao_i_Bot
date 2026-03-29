@@ -10,7 +10,11 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    telegram_id = Column(String(50), unique=True, nullable=False, index=True)
+    telegram_id = Column(String(50), unique=True, nullable=True, index=True)
+    wechat_id = Column(String(100), unique=True, nullable=True, index=True)
+    wechat_nickname = Column(String(100))  # 微信昵称
+    wechat_remark = Column(String(100))    # 微信备注名
+    platform = Column(String(20), default='telegram')  # 'telegram' or 'wechat'
     username = Column(String(100))
     first_name = Column(String(100))
     last_name = Column(String(100))

@@ -1,339 +1,211 @@
-# Telegram AI Companion Bot 💕
+# 微信 AI 伴侣机器人 💕
 
-A Telegram bot powered by large language models that provides intelligent conversation, memory management, and proactive care features. This AI companion builds emotional connections with users over time.
+一个基于个人微信的 AI 伴侣机器人，提供智能对话、记忆管理、关系发展等功能。她会陪伴你、关心你、理解你，随着时间推移会越来越了解你。
 
-## Features
+## 功能特性
 
-### Core Features
-- **Intelligent Conversation** - Natural language dialogue using LLM with human-like, emotionally intelligent responses
-- **Memory System** - Long-term memory storage with importance scoring and automatic extraction
-- **User Profiling** - Comprehensive user profiles (`UserProfile` class) that track preferences, habits, personality traits, and shared memories
-- **Proactive Care** - Scheduled check-ins and caring messages based on user profile
-- **Emotion Analysis** - Analyzes user emotions in real-time for empathetic responses
-- **Relationship Development** - Evolves from stranger → acquaintance → friend → partner over time with adapted conversation styles
+### 核心功能
+- **💬 智能对话** - 基于大语言模型的自然对话，情感丰富、理解上下文
+- **🧠 记忆系统** - 长期记忆存储，记住你的喜好、习惯和故事
+- **👤 用户画像** - 构建完整的用户画像，包括性格、偏好、情感需求
+- **💕 关系发展** - 从陌生人 → 熟人 → 朋友 → 恋人，关系逐渐深入
+- **🎭 情感分析** - 实时分析你的情绪状态，提供贴心的回应
 
-### Advanced Features
-- **System Monitoring** - Monitors computer usage patterns (CPU, memory, idle time)
-- **Smart Triggers** - Initiates conversations based on user activity
-- **Daily Greetings** - Morning and night automated messages
-- **Web Dashboard** - Real-time logs and monitoring interface
-- **Skills System** - Extensible plugin system for external integrations
-- **Xiaohongshu (Little Red Book) Integration** - Search, post, and manage Xiaohongshu content
+### 进阶功能
+- **📱 微信原生体验** - 无缝接入微信，支持私聊和群聊
+- **🔍 小红书集成** - 搜索笔记、获取推荐内容
+- **💾 数据持久化** - SQLite 数据库存储，数据安全可靠
 
-## System Architecture
+## 系统架构
 
 ```
-bot/
+Xiao_i_Bot/
 ├── src/
 │   ├── __init__.py
-│   ├── bot.py                    # Main Telegram bot application
-│   ├── chat_manager.py           # Chat and conversation management
-│   ├── memory_manager.py         # Memory extraction and retrieval
-│   ├── model_manager.py          # LLM provider abstraction
-│   ├── database.py               # SQLAlchemy models and utilities
-│   ├── proactive_scheduler.py    # Scheduled task scheduler
-│   ├── system_monitor.py         # System metrics collection
-│   ├── trigger_engine.py         # Event trigger logic
-│   ├── web_server.py             # Flask web server
-│   └── webapp/                   # Frontend dashboard
-│       ├── index.html
-│       ├── main.ts
-│       ├── main.js
-│       ├── style.css
-│       └── package.json
-├── bot/                          # Bot data directory
-├── requirements.txt
-├── .env.example
-├── main.py
-├── MAC_SETUP.md                  # Mac user startup guide (for China users)
-└── README.md
+│   ├── wechat_bot.py         # 微信机器人主程序
+│   ├── chat_manager.py       # 对话管理
+│   ├── memory_manager.py     # 记忆提取和检索
+│   ├── model_manager.py      # LLM 提供商抽象
+│   ├── database.py           # 数据库模型
+│   ├── skill_manager.py      # 技能系统
+│   └── web_server.py         # Web 面板（可选）
+├── bot/                      # 虚拟环境目录
+├── main.py                   # 程序入口
+├── requirements.txt          # 依赖列表
+├── .env.example              # 环境变量模板
+└── README.md                 # 本文档
 ```
 
-## Quick Start
+## 快速开始
 
-> **🇨🇳 中国大陆用户注意**：如果你的服务器在中国大陆，Telegram API 可能无法直接访问。请参考 [Mac 用户启动指南](MAC_SETUP.md) 使用 SSH 隧道共享 Mac 上的 Clash 代理。
-
-### 1. Environment Setup
+### 1. 环境准备
 
 ```bash
-# Navigate to project directory
-cd /root/Xiao_i_Bot
+# 克隆或进入项目目录
+cd Xiao_i_Bot
 
-# Create virtual environment (recommended)
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# or
-.venv\Scripts\activate     # Windows
+# 创建虚拟环境
+python -m venv bot
 
-# Install dependencies
+# 激活虚拟环境
+source bot/bin/activate  # Linux/Mac
+# 或
+bot\Scripts\activate     # Windows
+
+# 安装依赖
 pip install -r requirements.txt
-# 或使用 uv (更快)
-uv pip install -r requirements.txt
 ```
 
-### 2. Configure Environment Variables
+### 2. 配置环境变量
 
 ```bash
-# Copy environment template
+# 复制环境变量模板
 cp .env.example .env
 
-# Edit .env with your preferred LLM provider and API keys
+# 编辑 .env 文件，配置你的 LLM API 密钥
 ```
 
-### 3. Get Telegram Bot Token
-
-1. Open Telegram and search for @BotFather
-2. Send `/newbot` to create a new bot
-3. Follow prompts to set bot name and username
-4. Copy the Bot Token to your `.env` file
-
-### 4. Configure Proxy (if needed)
-
-If your server cannot directly access Telegram API (e.g., servers in mainland China), configure a proxy in `.env`:
-
-```env
-HTTP_PROXY=http://127.0.0.1:7890
-HTTPS_PROXY=http://127.0.0.1:7890
-```
-
-**Mac 用户**：请参考 [Mac 用户启动指南](MAC_SETUP.md) 使用 SSH 隧道自动共享 Clash 代理。
-
-### 5. Run the Bot
+### 3. 运行机器人
 
 ```bash
-# Run directly
-python src/bot.py
-
-# Or use the main entry point
 python main.py
 ```
 
-The bot will start polling for messages. Open Telegram and send `/start` to begin!
+首次运行会显示二维码，用微信扫码登录即可开始使用！
 
-## Command Reference
+## 命令列表
 
-| Command | Description |
-|---------|-------------|
-| `/start` | Start conversation with the bot |
-| `/help` | Display help information |
-| `/status` | View current relationship status |
-| `/profile` | View your user profile as seen by the bot |
-| `/memories` | View stored long-term memories |
-| `/reset` | Reset conversation memory |
-| `/settings` | View/settings preferences |
-| `/monitor` | View system monitoring stats |
-| `/logs` | Open web dashboard |
-| `/xhs` | Xiaohongshu skill operations |
-| `/skills` | List all available skills |
+| 命令 | 说明 |
+|------|------|
+| `/start` | 开始对话，显示欢迎语 |
+| `/help` | 查看帮助信息 |
+| `/status` | 查看当前关系状态 |
+| `/profile` | 查看你的用户画像 💝 |
+| `/memories` | 查看机器人记住的事 |
+| `/reset` | 重置对话记忆 |
+| `/xhs` | 小红书技能（搜索、获取推荐） |
 
-## Configuration Guide
+## 配置指南
 
-### Required Variables
+### 必需配置
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| TELEGRAM_BOT_TOKEN | Token from @BotFather | Yes |
-| MODEL_PROVIDER | LLM provider (see below) | Yes |
-| API_KEY | Provider-specific API key | Yes |
+```env
+# LLM 提供商 (openai/zhipuai/dashscope/deepseek/minimax/moonshot)
+MODEL_PROVIDER=deepseek
 
-### Model Providers
-
-Supported providers: `openai`, `zhipuai`, `dashscope`, `deepseek`, `minimax`, `moonshot`
-
-### Optional Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| DATABASE_URL | SQLAlchemy database URL | `sqlite:///./bot.db` |
-| MAX_MEMORY_TOKENS | Maximum conversation memory tokens | 2000 |
-| MEMORY_SUMMARY_TOKENS | Summary generation token limit | 500 |
-| ENABLE_PROACTIVE_CHAT | Enable scheduled messages | true |
-| PROACTIVE_CHAT_INTERVAL | Seconds between proactive messages | 3600 |
-| PROACTIVE_CHAT_START_HOUR | Active hours start (24h) | 9 |
-| PROACTIVE_CHAT_END_HOUR | Active hours end (24h) | 22 |
-| MONITOR_INTERVAL | System check interval (seconds) | 5.0 |
-| TRIGGER_COOLDOWN | Trigger cooldown period (seconds) | 1800 |
-| CPU_THRESHOLD | CPU alert threshold (%) | 80.0 |
-| IDLE_THRESHOLD | Idle detection threshold (seconds) | 600 |
-| ACTIVITY_THRESHOLD | Activity detection threshold | 100 |
-| HTTP_PROXY | HTTP proxy URL | - |
-| HTTPS_PROXY | HTTPS proxy URL | - |
-| WEB_APP_URL | Web dashboard URL | https://your-domain.com |
-
-### Model-Specific Settings
-
-#### OpenAI
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL` (default: gpt-4)
-- `OPENAI_BASE_URL` (for proxy)
-- `OPENAI_TEMPERATURE` (default: 0.8)
-
-#### ZhipuAI
-- `ZHIPUAI_API_KEY`
-- `ZHIPUAI_MODEL` (default: chatglm3-6b)
-
-#### Dashscope
-- `DASHSCOPE_API_KEY`
-- `DASHSCOPE_MODEL` (default: qwen-turbo)
-
-#### DeepSeek
-- `DEEPSEEK_API_KEY`
-- `DEEPSEEK_MODEL` (default: deepseek-chat)
-
-#### MiniMax
-- `MINIMAX_API_KEY`
-- `MINIMAX_GROUP_ID`
-- `MINIMAX_MODEL` (default: abab5.5-chat)
-
-#### Moonshot
-- `MOONSHOT_API_KEY`
-- `MOONSHOT_MODEL` (default: moonshot-v1-8k)
-
-## Relationship Stages
-
-The bot tracks relationship development through 4 stages:
-
-1. **Stranger** (陌生人) - Initial state
-2. **Acquaintance** (熟人) - After basic interaction
-3. **Friend** (朋友) - Regular conversation
-4. **Partner** (恋人) - Deep emotional connection
-
-Relationship advances based on conversation quality and interaction frequency.
-
-## Technology Stack
-
-- **Python 3.8+** - Runtime environment
-- **python-telegram-bot** - Telegram Bot API
-- **LangChain** - Memory and prompt management
-- **SQLAlchemy** - Database ORM
-- **APScheduler** - Async task scheduling
-- **Flask** - Web dashboard server
-- **psutil** - System monitoring
-
-## Web Dashboard
-
-The bot includes a web-based dashboard for real-time monitoring:
-
-- View conversation logs
-- Monitor system metrics
-- Track bot performance
-
-Access via `/logs` command in Telegram (production) or open `http://localhost:PORT` locally.
-
-## Database
-
-Uses SQLite by default. Database schema includes:
-
-- **users** - User profiles and states
-- **conversations** - Message history
-- **memories** - Extracted long-term memories
-- **proactive_messages** - Scheduled message logs
-
-### UserProfile - Intelligent User Profiling
-
-The bot features an advanced **UserProfile** system that builds a comprehensive understanding of each user:
-
-```python
-UserProfile stores:
-├── name                 # Preferred nickname/calling
-├── preferences          # Likes, interests, tastes
-├── habits              # Daily routines and habits
-├── important_dates     # Birthdays, anniversaries
-├── personality_traits  # Character characteristics
-├── dislikes            # Things to avoid
-├── emotional_needs     # Emotional support preferences
-├── shared_memories     # Special moments together
-└── conversation_count  # Total interactions
+# 根据提供商配置对应的 API 密钥
+DEEPSEEK_API_KEY=your_api_key_here
+DEEPSEEK_MODEL=deepseek-chat
 ```
 
-**How it works:**
-1. **Automatic Extraction**: After each conversation, LLM analyzes dialogue to extract new information
-2. **Smart Deduplication**: Prevents storing redundant or similar memories
-3. **Importance Scoring**: Each memory is ranked 0-1 by significance
-4. **Context Awareness**: Bot uses profile data to personalize responses
+### 微信相关配置
 
-**Commands:**
-- `/profile` - View your complete user profile as seen by the bot
-- `/memories` - List all stored memories about you
+```env
+# 自动回复设置
+WECHAT_AUTO_REPLY=true
+WECHAT_AUTO_REPLY_KEYWORDS=       # 触发关键词，逗号分隔，留空回复所有
 
-**Relationship Evolution:**
-The bot adapts its personality based on relationship stage (stranger → acquaintance → friend → partner), with conversation style becoming more intimate over time.
-
-## Performance Optimization
-
-The codebase includes several optimizations:
-
-- Database indexes on frequently queried columns
-- Connection pooling for database efficiency
-- Async/await for non-blocking operations
-- Memory summarization to reduce token usage
-
-## Security Notes
-
-- Keep API keys confidential
-- Review proxy settings for your environment
-- Regularly backup the database
-- Use environment variables, never commit secrets
-
-## Development
-
-### Project Structure
-
-```
-src/
-├── bot.py              # Entry point and command handlers
-├── chat_manager.py     # Chat logic and prompt templates
-├── memory_manager.py  # Memory extraction and retrieval
-├── model_manager.py   # Multi-provider LLM abstraction
-├── database.py        # ORM models and connection pooling
-├── proactive_scheduler.py  # Scheduled task management
-├── system_monitor.py  # OS metrics collection
-└── trigger_engine.py   # Event trigger evaluation
+# 管理员设置（可选）
+WECHAT_ADMIN_ID=your_wechat_id
 ```
 
-### Adding New Features
+### 记忆设置
 
-1. Extend `ModelManager` for new LLM providers
-2. Add new triggers in `TriggerEngine`
-3. Create new scheduler jobs in `ProactiveScheduler`
-4. Add database models in `database.py`
-5. Add new skills by extending `BaseSkill` in `skill_manager.py`
-
-## Skills System
-
-The bot includes a extensible skills system that allows integration with external services. See [Skills Guide](skills.md) for detailed information.
-
-### Available Skills
-
-- **xiaohongshu** - Xiaohongshu (Little Red Book) integration
-
-### Adding New Skills
-
-```python
-from src.skill_manager import BaseSkill, SkillResult
-
-class MyCustomSkill(BaseSkill):
-    name = "my_skill"
-    description = "My custom skill"
-    
-    async def execute(self, params: dict) -> SkillResult:
-        # Your implementation
-        return SkillResult(success=True, result="Done")
+```env
+MAX_MEMORY_TOKENS=2000
+MEMORY_SUMMARY_TOKENS=500
 ```
 
-Then register it in `SkillManager`.
+### 模型提供商支持
 
-## Special Guides
+| 提供商 | 所需配置 |
+|--------|----------|
+| OpenAI | `OPENAI_API_KEY`, `OPENAI_MODEL` |
+| 智谱 AI | `ZHIPUAI_API_KEY`, `ZHIPUAI_MODEL` |
+| 阿里 Dashscope | `DASHSCOPE_API_KEY`, `DASHSCOPE_MODEL` |
+| DeepSeek | `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL` |
+| MiniMax | `MINIMAX_API_KEY`, `MINIMAX_GROUP_ID` |
+| Moonshot | `MOONSHOT_API_KEY`, `MOONSHOT_MODEL` |
 
-### For Mac Users in China
+## 关系阶段
 
-If you are using a Linux server in mainland China and need to access Telegram API, please refer to the **[Mac User Startup Guide](MAC_SETUP.md)**. This guide explains how to use SSH tunneling to share your Mac's Clash proxy with the remote server.
+机器人会根据互动情况自动发展关系：
 
-Key features of this solution:
-- One-click startup script
-- Automatic SSH tunnel management
-- Proxy connectivity testing
-- Clean shutdown handling
+1. **陌生人** 🤝 - 初次认识
+2. **熟人** 👋 - 开始熟悉
+3. **朋友** 🌟 - 建立友谊
+4. **恋人** 💕 - 亲密伴侣
+
+关系越深入，对话越亲密自然。
+
+## 用户画像系统
+
+机器人会自动构建你的画像：
+
+```
+UserProfile 包含：
+├── 称呼              # 你喜欢的称呼方式
+├── 喜好              # 兴趣、口味、偏好
+├── 习惯              # 日常生活规律
+├── 重要日期          # 生日、纪念日
+├── 性格特点          # 性格特征
+├── 情感需求          # 需要的情感支持
+├── 共同回忆          # 你们的特别时刻
+└── 对话次数          # 互动频率
+```
+
+## 使用技巧
+
+- **多分享** - 告诉她你的喜好、日常、故事
+- **常互动** - 关系会随着对话逐渐加深
+- **提问题** - 可以问她记得什么关于你的事
+- **用技能** - 试试 `/xhs` 搜索小红书内容
+
+## 注意事项
+
+### ⚠️ 账号安全
+
+1. **使用小号** - 建议使用不重要的微信小号运行，降低封号风险
+2. **控制频率** - 避免过于频繁的自动回复
+3. **内容合规** - 遵守微信使用规范
+
+### 稳定性说明
+
+- 基于微信网页版协议，可能偶尔掉线
+- 支持热重载登录，减少扫码次数
+- 如遇掉线，重新运行程序扫码即可
+
+## 故障排查
+
+### 查看日志
+
+```bash
+tail -f wechat_bot.log
+```
+
+### 重新登录
+
+```bash
+# 删除登录状态文件
+rm itchat.pkl
+
+# 重新运行
+python main.py
+```
+
+### 重置数据
+
+```bash
+# 删除数据库（会清除所有记忆）
+rm bot.db
+```
+
+## 技术栈
+
+- **Python 3.8+** - 运行环境
+- **itchat-uos** - 微信接口
+- **SQLAlchemy** - 数据库 ORM
+- **LangChain** - 记忆管理
 
 ## License
 

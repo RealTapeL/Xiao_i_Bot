@@ -49,3 +49,18 @@ package-lock.json
 
 # Trae
 .trae/
+
+# WeChat
+itchat.pkl
+*.pkl
+
+# Backup files
+*.bak
+*_backup
+
+# Telegram legacy files
+*telegram*
+
+# Local config
+config.local.json
+secrets.json
