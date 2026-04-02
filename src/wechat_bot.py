@@ -42,6 +42,10 @@ class WeChatLoveBot:
         self.enable_auto_reply = os.getenv('WECHAT_AUTO_REPLY', 'true').lower() == 'true'
         self.auto_reply_keywords = os.getenv('WECHAT_AUTO_REPLY_KEYWORDS', '').split(',')
         self.admin_wechat_id = os.getenv('WECHAT_ADMIN_ID', '')  # 管理员微信号
+        
+        # 防止循环回复：记录最近处理的消息
+        self._processed_msgs = set()
+        self._max_processed_cache = 100
 
         # 初始化数据库
         self.engine = init_db(self.database_url)
@@ -194,12 +198,38 @@ class WeChatLoveBot:
         from_user = msg['FromUserName']
         to_user = msg['ToUserName']
         msg_text = msg['Text']
+        msg_id = msg.get('MsgId', '')
         
-        # 过滤群聊消息（除非@机器人）
-        if msg['isAt'] or (not msg['isGroupChat']):
-            pass  # 处理消息
-        elif msg['isGroupChat'] and not msg['isAt']:
-            return  # 群聊未@不处理
+        # 消息去重：避免重复处理同一条消息
+        if msg_id in self._processed_msgs:
+            return
+        self._processed_msgs.add(msg_id)
+        if len(self._processed_msgs) > self._max_processed_cache:
+            self._processed_msgs = set(list(self._processed_msgs)[-50:])
+        
+        # 获取自己的微信ID
+        my_user_name = itchat.get_friends(update=True)[0]['UserName']
+        
+        # 检查是否是自己发的消息（发给文件传输助手）
+        is_self_msg = (from_user == my_user_name)
+        
+        # 如果是自己发的消息，目标应该是文件传输助手
+        if is_self_msg:
+            # 只处理发给文件传输助手的消息，忽略发给其他人的
+            if to_user != 'filehelper':
+                return
+            # 获取文件传输助手ID
+            file_helper_id = 'filehelper'
+            # 将消息视为来自文件传输助手，这样机器人会回复到文件传输助手
+            msg['FromUserName'] = file_helper_id
+            msg['ToUserName'] = my_user_name
+            logger.info(f"收到自己发的消息，转发到文件传输助手: {msg_text}")
+        else:
+            # 过滤群聊消息（除非@机器人）
+            if msg['isAt'] or (not msg['isGroupChat']):
+                pass  # 处理消息
+            elif msg['isGroupChat'] and not msg['isAt']:
+                return  # 群聊未@不处理
         
         # 检查是否应该自动回复
         if not self._should_auto_reply(msg_text):
