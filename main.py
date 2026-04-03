@@ -82,14 +82,13 @@ def main():
         return 1
     
     # 配置 OpenClaw 认证（从 .env 读取 API Key）
-    # 支持 Moonshot 或 DeepSeek
     try:
         import json
         auth_dir = os.path.expanduser('~/.openclaw/agents/main/agent')
         os.makedirs(auth_dir, exist_ok=True)
         auth_file = os.path.join(auth_dir, 'auth-profiles.json')
         
-        # 优先使用 DeepSeek（更稳定）
+        # 使用 DeepSeek（更稳定）
         deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
         if deepseek_api_key:
             auth_config = {
@@ -100,15 +99,8 @@ def main():
             with open(auth_file, 'w') as f:
                 json.dump(auth_config, f, indent=2)
             logger.info("✅ 已配置 DeepSeek 认证")
-        elif moonshot_api_key:
-            auth_config = {
-                "moonshot:manual": {
-                    "apiKey": moonshot_api_key
-                }
-            }
-            with open(auth_file, 'w') as f:
-                json.dump(auth_config, f, indent=2)
-            logger.info("✅ 已配置 Moonshot 认证")
+        else:
+            logger.warning("⚠️ 未找到 DEEPSEEK_API_KEY")
     except Exception as e:
         logger.warning(f"配置认证文件时出错: {e}")
     
