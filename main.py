@@ -89,19 +89,11 @@ def main():
             os.makedirs(auth_dir, exist_ok=True)
             auth_file = os.path.join(auth_dir, 'auth-profiles.json')
             
-            # 创建认证配置
+            # 创建认证配置（OpenClaw 格式）
             auth_config = {
-                "version": 1,
-                "profiles": {
-                    "moonshot:default": {
-                        "provider": "moonshot",
-                        "type": "apiKey",
-                        "credentials": {
-                            "apiKey": moonshot_api_key
-                        }
-                    }
-                },
-                "order": ["moonshot:default"]
+                "moonshot:manual": {
+                    "apiKey": moonshot_api_key
+                }
             }
             
             with open(auth_file, 'w') as f:
