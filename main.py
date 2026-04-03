@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 os.environ['OPENCLAW_SEARCH_ENGINE'] = 'bing'  # 可选: baidu, bing
 os.environ['OPENCLAW_URL_FETCH_ENABLED'] = '1'
 
+# 配置 Moonshot/Kimi API Key
+os.environ['MOONSHOT_API_KEY'] = 'sk-kimi-HUvrBzE9aqVoQ7cvHCxxIqJFmiVJNcAq1mB68sZgRVZ8zoFcrWihsoxNQwIKIAo5'
+
 # 加载环境变量
 load_dotenv()
 
