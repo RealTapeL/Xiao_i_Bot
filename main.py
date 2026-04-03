@@ -10,15 +10,17 @@ import signal
 import time
 from dotenv import load_dotenv
 
+# 先加载环境变量（从 .env 文件），再配置日志
+load_dotenv()
+
+# 从 .env 文件读取 Moonshot/Kimi API Key 并设置给 OpenClaw
+moonshot_api_key = os.getenv('MOONSHOT_API_KEY')
+if moonshot_api_key:
+    os.environ['MOONSHOT_API_KEY'] = moonshot_api_key
+
 # 配置国内搜索引擎（百度/必应）
 os.environ['OPENCLAW_SEARCH_ENGINE'] = 'bing'  # 可选: baidu, bing
 os.environ['OPENCLAW_URL_FETCH_ENABLED'] = '1'
-
-# 配置 Moonshot/Kimi API Key
-os.environ['MOONSHOT_API_KEY'] = 'sk-kimi-HUvrBzE9aqVoQ7cvHCxxIqJFmiVJNcAq1mB68sZgRVZ8zoFcrWihsoxNQwIKIAo5'
-
-# 加载环境变量
-load_dotenv()
 
 # 配置日志
 logging.basicConfig(
@@ -30,6 +32,12 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# 在日志中记录 API Key 加载状态
+if moonshot_api_key:
+    logger.info("✅ 已从 .env 文件加载 Moonshot API Key")
+else:
+    logger.warning("⚠️ 未找到 MOONSHOT_API_KEY，请在 .env 文件中配置")
 
 # 全局进程引用
 gateway_process = None
