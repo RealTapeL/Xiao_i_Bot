@@ -82,26 +82,35 @@ def main():
         return 1
     
     # 配置 OpenClaw 认证（从 .env 读取 API Key）
-    if moonshot_api_key:
-        try:
-            import json
-            auth_dir = os.path.expanduser('~/.openclaw/agents/main/agent')
-            os.makedirs(auth_dir, exist_ok=True)
-            auth_file = os.path.join(auth_dir, 'auth-profiles.json')
-            
-            # 创建认证配置（OpenClaw 格式）
+    # 支持 Moonshot 或 DeepSeek
+    try:
+        import json
+        auth_dir = os.path.expanduser('~/.openclaw/agents/main/agent')
+        os.makedirs(auth_dir, exist_ok=True)
+        auth_file = os.path.join(auth_dir, 'auth-profiles.json')
+        
+        # 优先使用 DeepSeek（更稳定）
+        deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
+        if deepseek_api_key:
+            auth_config = {
+                "deepseek:default": {
+                    "apiKey": deepseek_api_key
+                }
+            }
+            with open(auth_file, 'w') as f:
+                json.dump(auth_config, f, indent=2)
+            logger.info("✅ 已配置 DeepSeek 认证")
+        elif moonshot_api_key:
             auth_config = {
                 "moonshot:manual": {
                     "apiKey": moonshot_api_key
                 }
             }
-            
             with open(auth_file, 'w') as f:
                 json.dump(auth_config, f, indent=2)
-            
-            logger.info("✅ 已配置 OpenClaw 认证文件")
-        except Exception as e:
-            logger.warning(f"配置认证文件时出错: {e}")
+            logger.info("✅ 已配置 Moonshot 认证")
+    except Exception as e:
+        logger.warning(f"配置认证文件时出错: {e}")
     
     # 设置 DNS 为公共 DNS（解决联网搜索被阻止的问题）
     try:
