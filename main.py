@@ -10,6 +10,10 @@ import signal
 import time
 from dotenv import load_dotenv
 
+# 配置国内搜索引擎（百度/必应）
+os.environ['OPENCLAW_SEARCH_ENGINE'] = 'bing'  # 可选: baidu, bing
+os.environ['OPENCLAW_URL_FETCH_ENABLED'] = '1'
+
 # 加载环境变量
 load_dotenv()
 
@@ -66,6 +70,32 @@ def main():
         logger.error("请先安装 OpenClaw: sudo npm install -g openclaw")
         return 1
     
+    # 设置 DNS 为公共 DNS（解决联网搜索被阻止的问题）
+    try:
+        # 备份原始 DNS 配置
+        if os.path.exists('/etc/resolv.conf'):
+            with open('/etc/resolv.conf', 'r') as f:
+                original_dns = f.read()
+            if '114.114.114.114' not in original_dns and '8.8.8.8' not in original_dns:
+                logger.info("配置公共 DNS 服务器...")
+                # 使用国内 DNS 和 Google DNS
+                dns_config = """# 公共 DNS 配置
+nameserver 114.114.114.114
+nameserver 223.5.5.5
+nameserver 8.8.8.8
+"""
+                with open('/tmp/resolv.conf.new', 'w') as f:
+                    f.write(dns_config + original_dns)
+                # 尝试替换（可能需要 sudo）
+                result = subprocess.run(
+                    ['sudo', 'cp', '/tmp/resolv.conf.new', '/etc/resolv.conf'],
+                    capture_output=True
+                )
+                if result.returncode == 0:
+                    logger.info("DNS 配置已更新（使用 114.114.114.114 / 223.5.5.5 / 8.8.8.8）")
+    except Exception as e:
+        logger.warning(f"配置 DNS 时出错: {e}")
+    
     # 设置 gateway 配置
     try:
         subprocess.run(['openclaw', 'config', 'set', 'gateway.mode', 'local'], 
@@ -97,6 +127,7 @@ def main():
         logger.info("3. 开始聊天！")
         logger.info("")
         logger.info("支持的命令: /start, /help, /status, /profile, /memories, /reset")
+        logger.info("联网搜索: 支持必应/Bing 搜索（如果 DNS 配置成功）")
         logger.info("=" * 50)
         
         # 实时输出日志
