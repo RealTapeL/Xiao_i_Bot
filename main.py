@@ -81,6 +81,36 @@ def main():
         logger.error("请先安装 OpenClaw: sudo npm install -g openclaw")
         return 1
     
+    # 配置 OpenClaw 认证（从 .env 读取 API Key）
+    if moonshot_api_key:
+        try:
+            import json
+            auth_dir = os.path.expanduser('~/.openclaw/agents/main/agent')
+            os.makedirs(auth_dir, exist_ok=True)
+            auth_file = os.path.join(auth_dir, 'auth-profiles.json')
+            
+            # 创建认证配置
+            auth_config = {
+                "version": 1,
+                "profiles": {
+                    "moonshot:default": {
+                        "provider": "moonshot",
+                        "type": "apiKey",
+                        "credentials": {
+                            "apiKey": moonshot_api_key
+                        }
+                    }
+                },
+                "order": ["moonshot:default"]
+            }
+            
+            with open(auth_file, 'w') as f:
+                json.dump(auth_config, f, indent=2)
+            
+            logger.info("✅ 已配置 OpenClaw 认证文件")
+        except Exception as e:
+            logger.warning(f"配置认证文件时出错: {e}")
+    
     # 设置 DNS 为公共 DNS（解决联网搜索被阻止的问题）
     try:
         # 备份原始 DNS 配置
