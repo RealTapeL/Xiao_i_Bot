@@ -37,6 +37,8 @@ ENV/
 # Database
 *.db
 *.sqlite3
+data/
+memories.db
 
 # IDE
 .vscode/
@@ -54,6 +56,11 @@ package-lock.json
 itchat.pkl
 *.pkl
 
+# Xiaohongshu
+xiaohongshu-skills/
+*.log
+nohup.out
+
 # Backup files
 *.bak
 *_backup
@@ -63,4 +70,5 @@ itchat.pkl
 
 # Local config
 config.local.json
-secrets.json
+secrets.jsonxiaohongshu-skills/
+XiaohongshuSkills/

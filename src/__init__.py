@@ -1,2 +1,1 @@
-
-# Telegram Bot 人机恋系统
+# QQ AI 伴侣机器人 - 核心模块
